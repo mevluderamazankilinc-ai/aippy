@@ -118,6 +118,252 @@
 <div id="app"></div>
 
 <script>
+/* ======= CONFIG ======= */
+const GOOGLE_CLIENT_ID = "7980569362-epn476gvk32cjq4ptk9f13l2jeqspspo.apps.googleusercontent.com";
+
+/* ============ STARFIELD ============ */
+(function(){
+  const canvas = document.getElementById('stars');
+  const ctx = canvas.getContext('2d');
+  let w,h,stars=[];
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function resize(){ w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+  function makeStars(){
+    stars = [];
+    const n = Math.floor((w*h)/9000);
+    for(const i=0;i<n;i++){
+      stars.push({ x:Math.random()*w, y:Math.random()*h, r:Math.random()*1.3+0.2,
+        a:Math.random()*0.6+0.15, speed:Math.random()*0.06+0.01, tw:Math.random()*Math.PI*2 });
+    }
+  }
+  function draw(){
+    ctx.clearRect(0,0,w,h); ctx.fillStyle='#050507'; ctx.fillRect(0,0,w,h);
+    for(const s of stars){
+      const flicker = reduced ? s.a : s.a + Math.sin(s.tw)*0.15;
+      ctx.beginPath(); ctx.fillStyle='rgba(255,255,255,'+Math.max(0,flicker)+')';
+      ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill();
+    }
+  }
+  function tick(){
+    for(const s of stars){
+      s.tw += 0.02;
+      if(!reduced){ s.y += s.speed; if(s.y>h){ s.y=0; s.x=Math.random()*w; } }
+    }
+    draw();
+    if(!reduced) requestAnimationFrame(tick);
+  }
+  window.addEventListener('resize', ()=>{ resize(); makeStars(); if(reduced) draw(); });
+  resize(); makeStars(); draw();
+  if(!reduced) requestAnimationFrame(tick);
+})();
+
+/* ============ ICONS ============ */
+const ICONS = {
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5a1 1 0 0 0 1 1H9v-6h6v6h2.5a1 1 0 0 0 1-1V10"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
+  heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 20.5s-7.5-4.6-10-9.2C.4 8 2 4.5 5.6 4c2.1-.3 4 .7 6.4 3.3C14.4 4.7 16.3 3.7 18.4 4c3.6.5 5.2 4 3.6 7.3-2.5 4.6-10 9.2-10 9.2Z"/></svg>',
+  refresh:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4v6h6M20 20v-6h-6"/><path d="M4.6 15A8 8 0 0 0 19 8.3M19.4 9A8 8 0 0 0 5 15.7"/></svg>',
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 5 8 12l7 7"/></svg>'
+};
+function emblem(){
+  return '<svg class="emblem" viewBox="0 0 34 34" fill="none" stroke="var(--fg)" stroke-width="0.9">'+
+    '<circle cx="17" cy="17" r="14.5"/>'+
+    '<path d="M17 8.5l1.7 5.2 5.4.1-4.4 3.3 1.7 5.2-4.4-3.3-4.4 3.3 1.7-5.2-4.4-3.3 5.4-.1z" fill="var(--fg)" stroke="none"/></svg>';
+}
+function wordmark(){
+  return '<div class="wordmark">'+emblem()+'<div class="wordmark-col"><span class="name">Babaanne</span><span class="sub">games</span></div></div>';
+}
+function escapeHtml(str){ const d=document.createElement('div'); d.textContent=str||''; return d.innerHTML; }
+
+/* ============ STATE ============ */
+const state = { view:'home', user:null, games:[], liked:[], generating:false, genError:null };
+const app = document.getElementById('app');
+
+function loadLocal(){
+  try{ const u = localStorage.getItem('bg-user'); if(u) state.user = JSON.parse(u); }catch(e){}
+  try{ const l = localStorage.getItem('bg-liked'); if(l) state.liked = JSON.parse(l); }catch(e){}
+}
+function saveUser(){ try{ localStorage.setItem('bg-user', JSON.stringify(state.user)); }catch(e){} }
+function saveLiked(){ try{ localStorage.setItem('bg-liked', JSON.stringify(state.liked)); }catch(e){} }
+
+async function loadGames(){
+  try{
+    const r = await fetch('/api/games');
+    if(r.ok) state.games = await r.json();
+  }catch(e){ state.games = []; }
+}
+
+function render(){
+  if(state.view==='home') return renderHome();
+  if(state.view==='login') return renderLogin();
+  if(state.view==='feed') return renderFeed();
+  if(state.view==='create') return renderCreate();
+}
+
+function renderHome(){
+  app.innerHTML = `
+    <div class="login-screen">
+      <div class="orbit-wrap"><div class="orbit-ring"></div><div class="orbit-ring r2"></div><div class="orbit-dot"></div><div class="core"></div></div>
+      <h1 class="brand-title">Babaanne <em>Games</em></h1>
+      <p class="tagline">Fikrini söyle, yapay zekâ oyunu kursun. Herkesin kurduğu oyunları kaydırarak keşfet ve oyna.</p>
+      <div class="home-points">
+        <div class="home-point"><span class="hp-index">01</span>Bir oyun fikri yaz</div>
+        <div class="home-point"><span class="hp-index">02</span>Yapay zekâ anında kursun</div>
+        <div class="home-point"><span class="hp-index">03</span>Kaydırarak keşfet, oyna, beğen</div>
+      </div>
+      <button id="startBtn" class="btn-primary">Galaksiye Gir</button>
+      <div class="fine-print">Google ile giriş · Ücretsiz</div>
+    </div>`;
+  document.getElementById('startBtn').addEventListener('click', ()=>{ state.view='login'; render(); });
+}
+
+function handleCredentialResponse(response){
+  try{
+    const payload = JSON.parse(atob(response.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    state.user = { name: payload.name || payload.email, picture: payload.picture || null, sub: payload.sub };
+    saveUser();
+    state.view = 'feed';
+    loadGames().then(render);
+  }catch(e){
+    state.genError = 'Giriş hatası!'; render();
+  }
+}
+window.handleCredentialResponse = handleCredentialResponse;
+
+function renderLogin(){
+  app.innerHTML = `
+    <div class="login-screen">
+      <button id="homeBackBtn" class="icon-btn" style="position:absolute;top:20px;left:16px;">${ICONS.back}</button>
+      <div class="orbit-wrap"><div class="orbit-ring"></div><div class="orbit-ring r2"></div><div class="orbit-dot"></div><div class="core"></div></div>
+      <h1 class="brand-title">Babaanne <em>Games</em></h1>
+      <p class="tagline">Giriş yap ve dünyayı keşfet.</p>
+      <div id="gsiBtn"></div>
+    </div>`;
+  document.getElementById('homeBackBtn').addEventListener('click', ()=>{ state.view='home'; render(); });
+  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleCredentialResponse });
+  google.accounts.id.renderButton(document.getElementById('gsiBtn'), { theme:'filled_white', size:'large', shape:'pill' });
+}
+
+function renderFeed(){
+  app.innerHTML = `
+    <div class="top-bar">${wordmark()}</div>
+    <div class="empty-state">${emblem()}<p>Henüz galakside oyun yok.</p><button id="ctaCreate" class="btn-primary">Oyun Yarat</button></div>
+    <div class="bottom-nav">
+       <button class="nav-btn active">${ICONS.home}<span>Akış</span></button>
+       <button class="nav-plus" id="navPlus">${ICONS.plus}</button>
+    </div>`;
+  document.getElementById('ctaCreate').addEventListener('click', ()=>{ state.view='create'; render(); });
+  document.getElementById('navPlus').addEventListener('click', ()=>{ state.view='create'; render(); });
+}
+
+function renderCreate(){
+  app.innerHTML = `
+    <div class="create-screen">
+      <div class="create-header"><button class="icon-btn" id="backBtn">${ICONS.back}</button>${wordmark()}</div>
+      <div class="create-eyebrow">Yeni sinyal</div>
+      <h2 class="create-title">Ne tür bir oyun<br/>hayal ediyorsun?</h2>
+      <textarea id="ideaInput" class="idea-box" placeholder="Örneğin: Zıplayan bir kutu, labirentten kaçış..."></textarea>
+      <div class="create-footer">
+        <button id="genBtn" class="btn-primary">AI ile Oluştur</button>
+      </div>
+    </div>`;
+  document.getElementById('backBtn').addEventListener('click', ()=>{ state.view='feed'; render(); });
+  document.getElementById('genBtn').addEventListener('click', async()=>{
+    const text = document.getElementById('ideaInput').value;
+    if(!text) return;
+    alert("Oyun oluşturuluyor: " + text); // Burayı backend bağlantına göre güncelleyeceksin
+  });
+}
+
+loadLocal();
+render();
+</script>
+</body>
+</html>
+
+  .login-screen{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:32px;text-align:center;position:relative;}
+  .orbit-wrap{position:relative;width:220px;height:220px;margin-bottom:36px;}
+  .orbit-ring{position:absolute;inset:0;border:1px solid var(--line-strong);border-radius:50%;}
+  .orbit-ring.r2{inset:26px;border-color:var(--line);}
+  .orbit-dot{position:absolute;top:-3px;left:50%;width:6px;height:6px;margin-left:-3px;
+    background:var(--fg);border-radius:50%;box-shadow:0 0 8px 2px rgba(255,255,255,0.5);
+    animation:spin 9s linear infinite;transform-origin:3px 113px;}
+  @keyframes spin{from{transform:rotate(0deg) translateY(0);}to{transform:rotate(360deg) translateY(0);}}
+  .core{position:absolute;top:50%;left:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #fdfdfb, #b9b9bf 55%, #232329 100%);
+    box-shadow:0 0 40px 6px rgba(255,255,255,0.12);}
+  .brand-title{font-family:'Fraunces',serif;font-weight:500;font-size:40px;letter-spacing:0.01em;margin:0;}
+  .brand-title em{font-style:italic;font-weight:300;color:var(--dim);}
+  .tagline{color:var(--dim);font-size:14.5px;max-width:300px;margin:14px 0 32px;line-height:1.6;}
+  .home-points{display:flex;flex-direction:column;gap:10px;margin-bottom:32px;width:100%;max-width:280px;}
+  .home-point{display:flex;align-items:center;gap:12px;text-align:left;font-size:13.5px;color:var(--dim);
+    border-top:1px solid var(--line);padding-top:10px;}
+  .hp-index{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim-2);letter-spacing:0.08em;}
+  #gsiBtn{margin:0 auto;}
+  .fine-print{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--dim-2);
+    letter-spacing:0.04em;margin-top:22px;text-transform:uppercase;}
+  .error-msg{color:#d9d9de;background:rgba(255,255,255,0.06);border:1px solid var(--line-strong);
+    padding:12px 14px;border-radius:2px;font-size:13px;line-height:1.5;max-width:300px;margin-top:16px;}
+
+  .feed{height:100%;width:100%;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;}
+  .feed::-webkit-scrollbar{display:none;}
+  .slide{height:100%;width:100%;scroll-snap-align:start;position:relative;display:flex;align-items:flex-end;background:#000;}
+  .slide iframe{position:absolute;inset:0;width:100%;height:100%;border:none;background:#000;}
+  .slide-scrim{position:absolute;left:0;right:0;bottom:0;height:46%;pointer-events:none;
+    background:linear-gradient(to top, rgba(0,0,0,0.88), rgba(0,0,0,0.35) 55%, transparent);}
+  .slide-info{position:relative;z-index:2;padding:0 78px 100px 20px;width:100%;}
+  .slide-creator{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:0.06em;text-transform:uppercase;}
+  .slide-title{font-family:'Fraunces',serif;font-weight:500;font-size:23px;margin:6px 0 0;line-height:1.2;}
+  .slide-actions{position:absolute;right:14px;bottom:110px;z-index:3;display:flex;flex-direction:column;align-items:center;gap:22px;}
+  .act-btn{background:none;border:none;color:var(--fg);display:flex;flex-direction:column;align-items:center;gap:5px;}
+  .act-btn svg{width:26px;height:26px;}
+  .act-btn.liked svg path{fill:var(--fg);}
+  .act-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);}
+  .top-bar{position:absolute;top:0;left:0;right:0;z-index:5;padding:18px 18px 40px;
+    display:flex;align-items:center;justify-content:space-between;pointer-events:none;
+    background:linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);}
+
+  .empty-state{height:100%;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:40px;gap:16px;}
+  .empty-state p{color:var(--dim);font-size:14px;max-width:260px;line-height:1.6;margin:0;}
+
+  .bottom-nav{position:absolute;left:0;right:0;bottom:0;z-index:10;height:78px;
+    display:flex;align-items:center;justify-content:space-around;background:rgba(6,6,9,0.75);
+    backdrop-filter:blur(14px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);}
+  .nav-btn{background:none;border:none;color:var(--dim);display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .nav-btn.active{color:var(--fg);}
+  .nav-btn svg{width:22px;height:22px;}
+  .nav-btn span{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;}
+  .nav-plus{width:46px;height:46px;border-radius:50%;background:var(--fg);color:var(--bg);
+    display:flex;align-items:center;justify-content:center;border:none;margin-top:-14px;
+    box-shadow:0 0 20px rgba(255,255,255,0.18);}
+  .nav-plus svg{width:22px;height:22px;}
+  .nav-avatar{width:22px;height:22px;border-radius:50%;background:var(--panel-2);border:1px solid var(--line-strong);
+    display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;overflow:hidden;}
+  .nav-avatar img{width:100%;height:100%;object-fit:cover;}
+
+  .create-screen{height:100%;display:flex;flex-direction:column;padding:20px 20px 0;}
+  .create-header{display:flex;align-items:center;gap:14px;padding:6px 0 28px;}
+  .create-eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;}
+  .create-title{font-family:'Fraunces',serif;font-weight:500;font-size:26px;margin:0 0 26px;}
+  .idea-box{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:3px;color:var(--fg);
+    padding:16px;font-size:15px;line-height:1.6;resize:none;outline:none;max-height:180px;}
+  .idea-box:focus{border-color:var(--line-strong);}
+  .create-note{color:var(--dim-2);font-size:12px;line-height:1.6;margin:16px 0 0;}
+  .create-footer{padding:20px 0;display:flex;flex-direction:column;gap:10px;}
+  .spinner{width:15px;height:15px;border:2px solid rgba(0,0,0,0.25);border-top-color:var(--bg);
+    border-radius:50%;display:inline-block;animation:spin2 .8s linear infinite;margin-right:8px;vertical-align:-2px;}
+  @keyframes spin2{to{transform:rotate(360deg);}}
+
+  @media (prefers-reduced-motion: reduce){ .orbit-dot{animation:none;} }
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<div id="app"></div>
+
+<script>
 /* ======= CONFIG: bunu kendi Google OAuth Client ID'in ile değiştir ======= */
 const GOOGLE_CLIENT_ID = "7980569362-epn476gvk32cjq4ptk9f13l2jeqspspo.apps.googleusercontent.com";
 
