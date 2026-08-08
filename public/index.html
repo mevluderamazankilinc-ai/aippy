@@ -1,40 +1,725 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Babaanne Games</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,500&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Babaanne Games - Game Code Studio & Community</title>
+  <!-- Google Sign-In SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer onload="window.initGSI && window.initGSI()"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap');
 
-  :root{
-    --bg:#050507; --panel:#0c0c11; --panel-2:#111117; --fg:#f3f2ec;
-    --dim:#93939d; --dim-2:#5c5c66; --line:rgba(255,255,255,0.09);
-    --line-strong:rgba(255,255,255,0.22); --glow:rgba(255,255,255,0.95);
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--fg);
-    font-family:'Space Grotesk',sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent;}
-  #stars{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;}
-  #app{position:relative;z-index:1;height:100%;width:100%;}
-  ::selection{background:var(--fg);color:var(--bg);}
+    :root {
+      --bg-color: #050508;
+      --panel-bg: rgba(18, 18, 26, 0.94);
+      --panel-border: rgba(255, 255, 255, 0.12);
+      --accent-color: #00f2fe;
+      --text-main: #f3f3f6;
+      --text-dim: #9494a0;
+      --danger-color: #ff3b5c;
+      --code-bg: #0c0c12;
+    }
 
-  .emblem{width:34px;height:34px;flex-shrink:0;}
-  .wordmark{display:flex;align-items:center;gap:10px;}
-  .wordmark .name{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.28em;text-transform:uppercase;color:var(--fg);}
-  .wordmark .sub{font-family:'Fraunces',serif;font-style:italic;font-size:12px;color:var(--dim);letter-spacing:0.04em;margin-top:1px;}
-  .wordmark-col{display:flex;flex-direction:column;line-height:1.1;}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
 
-  button{font-family:inherit;cursor:pointer;}
-  input,textarea{font-family:inherit;}
-  .btn-primary{background:var(--fg);color:var(--bg);border:none;border-radius:2px;padding:15px 22px;
-    font-size:14px;font-weight:700;letter-spacing:0.02em;transition:transform .15s ease, opacity .15s ease;}
-  .btn-primary:active{transform:scale(0.98);}
-  .btn-primary:disabled{opacity:0.4;cursor:default;}
-  .icon-btn{background:none;border:none;color:var(--fg);}
-  .icon-btn svg{width:22px;height:22px;}
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Space Grotesk', sans-serif;
+      overflow: hidden;
+      position: fixed;
+    }
 
+    #stars-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    #app-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      outline: none;
+      border: none;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .btn-primary {
+      background: #ffffff;
+      color: #000000;
+      padding: 12px 24px;
+      border-radius: 99px;
+      font-weight: 700;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-primary:active { transform: scale(0.95); }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 99px;
+      font-weight: 600;
+      font-size: 13px;
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(8px);
+    }
+
+    .btn-accent {
+      background: var(--accent-color);
+      color: #000;
+      padding: 8px 16px;
+      border-radius: 99px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      z-index: 2;
+      padding-bottom: 70px;
+      overflow-y: auto;
+    }
+
+    .screen.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #welcome-screen {
+      justify-content: center;
+      align-items: center;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .orbit-animation {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      margin-bottom: 20px;
+    }
+
+    .orbit-circle {
+      position: absolute;
+      inset: 0;
+      border: 1px dashed rgba(255, 255, 255, 0.25);
+      border-radius: 50%;
+      animation: rotateOrbit 20s linear infinite;
+    }
+
+    .planet {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #ffffff, #8a8a9e 60%, #111116 100%);
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.25);
+    }
+
+    @keyframes rotateOrbit { 100% { transform: rotate(360deg); } }
+
+    .brand-title {
+      font-family: 'Fraunces', serif;
+      font-size: 34px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .brand-subtitle {
+      font-size: 13px;
+      color: var(--text-dim);
+      max-width: 290px;
+      line-height: 1.5;
+      margin-bottom: 25px;
+    }
+
+    .auth-box {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 290px;
+    }
+
+    #feed-screen {
+      background: #000;
+      padding-bottom: 0;
+    }
+
+    .feed-container {
+      width: 100%;
+      height: 100%;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      scrollbar-width: none;
+    }
+
+    .feed-container::-webkit-scrollbar { display: none; }
+
+    .game-slide {
+      width: 100%;
+      height: 100%;
+      scroll-snap-align: start;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      background: #000;
+    }
+
+    .game-iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #050508;
+    }
+
+    .game-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.15) 40%, transparent 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px 16px 85px 16px;
+      z-index: 2;
+    }
+
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: auto;
+    }
+
+    .game-logo {
+      font-family: 'Fraunces', serif;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .game-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .game-meta {
+      max-width: 75%;
+      pointer-events: auto;
+    }
+
+    .creator-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .game-title {
+      font-family: 'Fraunces', serif;
+      font-size: 20px;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .action-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(8px);
+      font-size: 16px;
+      pointer-events: auto;
+    }
+
+    .action-btn.liked {
+      color: var(--danger-color);
+      background: rgba(255, 59, 92, 0.25);
+    }
+
+    #studio-screen {
+      background: #000;
+      padding-bottom: 70px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .studio-navbar {
+      height: 50px;
+      background: var(--panel-bg);
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      gap: 6px;
+    }
+
+    .studio-tabs {
+      display: flex;
+      gap: 4px;
+      background: rgba(0,0,0,0.5);
+      padding: 3px;
+      border-radius: 8px;
+    }
+
+    .tab-btn {
+      background: none;
+      color: var(--text-dim);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .tab-btn.active {
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .studio-workspace {
+      flex: 1;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      height: calc(100% - 50px);
+    }
+
+    .editor-view, .preview-view, .assistant-view {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      flex-direction: column;
+    }
+
+    .editor-view.active, .preview-view.active, .assistant-view.active {
+      display: flex;
+    }
+
+    .code-editor-input {
+      width: 100%;
+      height: 100%;
+      background: var(--code-bg);
+      color: #a9b7c6;
+      border: none;
+      padding: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      line-height: 1.5;
+      resize: none;
+      outline: none;
+      tab-size: 2;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .preview-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #000;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .chat-msg {
+      max-width: 88%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .chat-msg.user {
+      align-self: flex-end;
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+    }
+
+    .chat-msg.assistant {
+      align-self: flex-start;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      color: #d1d1e0;
+    }
+
+    .chat-input-row {
+      padding: 10px;
+      background: var(--panel-bg);
+      border-top: 1px solid var(--panel-border);
+      display: flex;
+      gap: 8px;
+    }
+
+    .chat-input {
+      flex: 1;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 8px 14px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    #profile-screen {
+      background: var(--bg-color);
+      padding: 20px;
+    }
+
+    .profile-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--panel-border);
+    }
+
+    .profile-avatar {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: var(--panel-bg);
+      border: 2px solid var(--panel-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      background: rgba(5, 5, 8, 0.95);
+      backdrop-filter: blur(15px);
+      border-top: 1px solid var(--panel-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 10;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .nav-item {
+      background: none;
+      color: var(--text-dim);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      text-transform: uppercase;
+      padding: 6px 12px;
+    }
+
+    .nav-item.active { color: #ffffff; }
+    .nav-item i { font-size: 18px; }
+
+    .nav-code-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: #ffffff;
+      color: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      box-shadow: 0 0 18px rgba(255, 255, 255, 0.3);
+      transform: translateY(-10px);
+    }
+
+    .nav-code-btn span {
+      font-size: 8px;
+      font-family: 'Space Grotesk', sans-serif;
+      text-transform: uppercase;
+      font-weight: 800;
+      margin-top: -2px;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="stars-canvas"></canvas>
+
+  <div id="app-container">
+
+    <!-- 1. GİRİŞ EKRANI -->
+    <div id="welcome-screen" class="screen active">
+      <div class="orbit-animation">
+        <div class="orbit-circle"></div>
+        <div class="planet"></div>
+      </div>
+      <h1 class="brand-title">Babaanne <em>Games</em></h1>
+      <p class="brand-subtitle">Kendi HTML oyununu kodla, Gemini asistan ile sohbet et veya gerektiğinde kodu güncellet.</p>
+
+      <div class="auth-box">
+        <button class="btn-primary" onclick="window.navigateTo('studio')" style="width: 100%; font-size: 15px; padding: 14px;">
+          <i class="fa-solid fa-code"></i> 🛠️ Kod Stüdyosuna Gir
+        </button>
+
+        <div id="gsi-container" style="min-height: 44px; display: flex; justify-content: center; align-items: center;">
+          <div style="font-size: 12px; color: var(--text-dim);">Google yükleniyor...</div>
+        </div>
+        
+        <button class="btn-secondary" onclick="window.navigateTo('feed')" style="width: 100%;">
+          <i class="fa-solid fa-compass"></i> Oyun Akışını İzle
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. OYUN AKIŞI (FEED) EKRANI -->
+    <div id="feed-screen" class="screen">
+      <div class="feed-container" id="feed-scroller"></div>
+    </div>
+
+    <!-- 3. KOD STÜDYOSU (IDE + PREVIEW + GEMINI ASİSTAN) -->
+    <div id="studio-screen" class="screen">
+      <div class="studio-navbar">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input type="text" id="game-title-input" value="İsimsiz Oyun" style="background:none; border:1px solid transparent; color:#fff; font-family:'Fraunces'; font-weight:600; font-size:14px; width:110px; outline:none;" placeholder="Oyun Adı">
+        </div>
+
+        <div class="studio-tabs">
+          <button class="tab-btn active" id="tab-code" onclick="window.switchStudioTab('code')"><i class="fa-solid fa-code"></i> Kod</button>
+          <button class="tab-btn" id="tab-preview" onclick="window.switchStudioTab('preview')"><i class="fa-solid fa-play"></i> Test</button>
+          <button class="tab-btn" id="tab-ai" onclick="window.switchStudioTab('ai')"><i class="fa-solid fa-robot"></i> Asistan</button>
+        </div>
+
+        <button class="btn-accent" onclick="window.publishGame()"><i class="fa-solid fa-paper-plane"></i> Yayınla</button>
+      </div>
+
+      <div class="studio-workspace">
+        <div class="editor-view active" id="view-code">
+          <textarea id="code-editor" class="code-editor-input" spellcheck="false" placeholder="HTML Kodunu buraya yaz..."></textarea>
+        </div>
+
+        <div class="preview-view" id="view-preview">
+          <iframe id="preview-frame" class="preview-iframe" sandbox="allow-scripts allow-same-origin"></iframe>
+        </div>
+
+        <div class="assistant-view" id="view-ai">
+          <div class="chat-messages" id="chat-box">
+            <div class="chat-msg assistant">
+              👋 Selam! Ben Gemini Kod Asistanıyım. Normal sohbet edebilir, takıldığın yerleri sorabilirsin. Kodu değiştirmemi istersen <b>"kodu değiştir", "güncelle" veya "ekle"</b> demen yeterlidir!
+            </div>
+          </div>
+          <div class="chat-input-row">
+            <input type="text" id="chat-input" class="chat-input" placeholder="Gemini'a mesaj yaz..." onkeydown="if(event.key==='Enter') window.sendAiMessage()">
+            <button class="btn-primary" onclick="window.sendAiMessage()" style="padding: 8px 14px; border-radius:18px;"><i class="fa-solid fa-paper-plane"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. PROFİL EKRANI -->
+    <div id="profile-screen" class="screen">
+      <div class="profile-header">
+        <div class="profile-avatar" id="user-avatar-box">
+          <i class="fa-solid fa-user"></i>
+        </div>
+        <h3 style="font-family:'Fraunces'; font-size:20px;" id="user-name-text">Gezgin Yazılımcı</h3>
+        <p style="font-size:12px; color:var(--text-dim);" id="user-email-text">Misafir Hesabı</p>
+
+        <button onclick="window.logout()" class="btn-secondary" style="margin-top:12px; font-size:12px; color:var(--danger-color); border-color:rgba(255,59,92,0.3);">
+          <i class="fa-solid fa-right-from-bracket"></i> Çıkış Yap
+        </button>
+      </div>
+
+      <h3 style="font-family:'Fraunces'; font-size:16px; margin-bottom:10px;">Yazdığım Oyunlar</h3>
+      <div id="user-games-container" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
+
+    <!-- ALT NAVIGATION BAR -->
+    <div id="bottom-nav" class="bottom-nav" style="display: none;">
+      <button class="nav-item active" id="nav-feed" onclick="window.navigateTo('feed')">
+        <i class="fa-solid fa-compass"></i>
+        <span>Keşfet</span>
+      </button>
+
+      <button class="nav-code-btn" id="nav-studio" onclick="window.navigateTo('studio')">
+        <i class="fa-solid fa-code"></i>
+        <span>KODLA</span>
+      </button>
+
+      <button class="nav-item" id="nav-profile" onclick="window.navigateTo('profile')">
+        <i class="fa-solid fa-user"></i>
+        <span id="user-display-name">Profil</span>
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    const GOOGLE_CLIENT_ID = "7980569362-epn476gvk32cjq4ptk9f13l2jeqspspo.apps.googleusercontent.com";
+    const GEMINI_API_KEY = "AQ.Ab8RN6JZX7UbhPDgW27bbGoG7wAr0I9IlJrRvjTKoLvE60fdVA";
+
+    const DEFAULT_TEMPLATE = `<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { margin:0; background:#080812; color:#fff; font-family:sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; overflow:hidden; }
+    canvas { border:2px solid #00f2fe; border-radius:8px; background:#000; touch-action:none; }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="300" height="400"></canvas>
+  <p style="font-size:12px; color:#aaa; margin-top:8px;">Zıplamak için tıkla / dokun!</p>
+
+  <script>
+    const c = document.getElementById('c'), ctx = c.getContext('2d');
+    let ball = { x: 150, y: 200, v: 0 };
+
+    window.onpointerdown = () => { ball.v = -6; };
+
+    function loop() {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, 300, 400);
+
+      ball.v += 0.3;
+      ball.y += ball.v;
+      if(ball.y > 385) { ball.y = 385; ball.v = 0; }
+      if(ball.y < 15) { ball.y = 15; }
+
+      ctx.fillStyle = '#00f2fe';
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, 15, 0, Math.PI*2);
+      ctx.fill();
+
+      requestAnimationFrame(loop);
+    }
+    loop();
+  <\/script>
+</body>
+</html>`;
+
+    const state = {
+      currentUser: null,
+      games: [],
+      likedGames: new Set(),
+      activeScreen: 'welcome'
+    };
+
+    window.navigateTo = function(screenId) {
+      if (!state.currentUser && screenId !== 'welcome') {
+        state.currentUser = { name: 'Gezgin Yazılımcı', email: 'Misafir Oturumu' };
+        updateUserUI();
+      }
+
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const target = document.getElementById(`${screenId}-screen`);
+      if (target) {
+        target.classList.add('active');
+        state.activeScreen = screenId;
+      }
+
+      const bottomNav = document.getElementById('bottom-nav');
+      if (screenId === 'welcome') {
+        bottomNav.style.display = 'none';
+      } else {
+        bottomNav.style.display = 'flex';
+      }
+
+      document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+      if (screenId === 'feed') {
+        document.getElementById('nav-feed').classList.add('active');
+        renderFeed();
+      } else if (screenId === 'profile') {
+        document.getElementById('nav-profile').classList.add('active');
+        renderProfile();
+      }
+    };
+
+    window.switchStudioTab = function(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.editor-view, .preview-view, .assistant-view').forEach(v => v.classList.remove('active'));
+
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+      document.getElementById(`view-${tabName}`).classList.add
   .login-screen{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
     padding:32px;text-align:center;position:relative;}
   .orbit-wrap{position:relative;width:220px;height:220px;margin-bottom:36px;}
